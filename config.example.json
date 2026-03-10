@@ -1,8 +1,14 @@
 {
   "sessions_dir": "~/.openclaw/agents/main/sessions",
   "workspace_dir": "~/.openclaw/workspace",
+
+  "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+  "telegram_chat_id": "-1001234567890",
+  "telegram_user_id": "1616735985",
+
   "discord_webhook": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
   "discord_user_id": "YOUR_DISCORD_USER_ID",
+
   "channel_names": {
     "channel:YOUR_CHANNEL_ID_1": "#general",
     "channel:YOUR_CHANNEL_ID_2": "#posting",

@@ -4,10 +4,10 @@
 
 Two problems, one nightly cron:
 
-1. **Know what you spent** — parses your OpenClaw session files, computes per-session API costs, posts a clean report to Discord with 7-day trend
+1. **Know what you spent** — parses your OpenClaw session files, computes per-session API costs, posts a clean report to Telegram (or Discord fallback) with 7-day trend
 2. **Kill what's dead** — wipes sessions older than 24h with >1MB context before they snowball into thousands of dollars
 
-Zero AI credits spent running this. Pure Python + one Discord webhook.
+Zero AI credits spent running this. Pure Python + Telegram Bot API (or Discord webhook fallback).
 
 ---
 
@@ -53,7 +53,8 @@ python3 scripts/cost_report.py --config config.json --dry-run
 
 - Python 3.8+
 - OpenClaw installed and running
-- A Discord webhook URL (free, takes 30 seconds to create)
+- Telegram bot token + chat ID (recommended)
+- Optional Discord webhook fallback
 
 ---
 
@@ -77,8 +78,11 @@ See `config.example.json` for all options. The important ones:
 
 | Key | Description |
 |-----|-------------|
-| `discord_webhook` | Where the daily report gets posted |
-| `discord_user_id` | Who gets pinged when cost > threshold |
+| `telegram_bot_token` | Telegram bot token from BotFather |
+| `telegram_chat_id` | Chat/topic destination for the daily report |
+| `telegram_user_id` | Optional user id shown in high-burn warning |
+| `discord_webhook` | Optional fallback destination |
+| `discord_user_id` | Optional Discord mention for high-burn warning |
 | `zombie_min_age_hours` | Session age threshold (default: 24h) |
 | `zombie_min_size_mb` | Minimum file size to bother resetting (default: 1MB) |
 | `alert_high_cost` | 🚨 URGENT flag threshold in USD (default: $50) |
