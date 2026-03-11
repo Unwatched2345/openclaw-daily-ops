@@ -4,10 +4,10 @@
 
 Two problems, one nightly cron:
 
-1. **Know what you spent** — parses your OpenClaw session files, computes per-session API costs, posts a clean report to Telegram (or Discord fallback) with 7-day trend
+1. **Know what you spent** — parses your OpenClaw session files, computes per-session API costs, posts a clean report to Telegram with 7-day trend
 2. **Kill what's dead** — wipes sessions older than 24h with >1MB context before they snowball into thousands of dollars
 
-Zero AI credits spent running this. Pure Python + Telegram Bot API (or Discord webhook fallback).
+Zero AI credits spent running this. Pure Python + Telegram Bot API.
 
 ---
 
@@ -39,7 +39,7 @@ cd openclaw-daily-ops
 
 # 1. Configure
 cp config.example.json config.json
-# Edit config.json with your webhook, user ID, and session paths
+# Edit config.json with your Telegram bot token, chat ID, and session paths
 
 # 2. Test
 python3 scripts/cost_report.py --config config.json --dry-run
@@ -53,8 +53,7 @@ python3 scripts/cost_report.py --config config.json --dry-run
 
 - Python 3.8+
 - OpenClaw installed and running
-- Telegram bot token + chat ID (recommended)
-- Optional Discord webhook fallback
+- Telegram bot token + chat ID
 
 ---
 
@@ -66,7 +65,7 @@ openclaw-daily-ops/
 ├── README.md                ← This file
 ├── config.example.json      ← Configuration template
 └── scripts/
-    ├── cost_report.py       ← Cost parser + Discord poster
+    ├── cost_report.py       ← Cost parser + Telegram poster
     └── zombie_killer.py     ← Stale session wiper
 ```
 
@@ -81,8 +80,6 @@ See `config.example.json` for all options. The important ones:
 | `telegram_bot_token` | Telegram bot token from BotFather |
 | `telegram_chat_id` | Chat/topic destination for the daily report |
 | `telegram_user_id` | Optional user id shown in high-burn warning |
-| `discord_webhook` | Optional fallback destination |
-| `discord_user_id` | Optional Discord mention for high-burn warning |
 | `zombie_min_age_hours` | Session age threshold (default: 24h) |
 | `zombie_min_size_mb` | Minimum file size to bother resetting (default: 1MB) |
 | `alert_high_cost` | 🚨 URGENT flag threshold in USD (default: $50) |

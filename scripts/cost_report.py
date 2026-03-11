@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 OpenClaw Daily Cost Report
-Parses session JSONL files, computes today's API costs, posts to Telegram or Discord.
+Parses session JSONL files, computes today's API costs, posts to Telegram.
 
 Usage:
   python3 cost_report.py --config /path/to/config.json
@@ -160,7 +160,6 @@ def session_icon(cost):
 def build_report(today_str, total_cost, total_tokens, sorted_sessions, history, zombie_summary, cfg):
     alert_high = cfg.get("alert_high_cost", 50)
     alert_low = cfg.get("alert_low_cost", 10)
-    user_id = cfg.get("discord_user_id", "")
     telegram_user_id = cfg.get("telegram_user_id", "")
 
     lines = [f"📊 **Daily Cost Report — {today_str}**", ""]
@@ -187,9 +186,7 @@ def build_report(today_str, total_cost, total_tokens, sorted_sessions, history, 
     # Alert flags
     if total_cost >= alert_high:
         mention = ""
-        if user_id:
-            mention = f"<@{user_id}> "
-        elif telegram_user_id:
+        if telegram_user_id:
             mention = f"[user {telegram_user_id}] "
         lines.append(f"🚨 **{mention}HIGH BURN — ${total_cost:.2f} today**")
     elif total_cost <= alert_low and total_cost > 0:
@@ -200,25 +197,6 @@ def build_report(today_str, total_cost, total_tokens, sorted_sessions, history, 
         lines.append(zombie_summary)
 
     return "\n".join(lines)
-
-
-def post_discord(webhook_url, message):
-    payload = json.dumps({"content": message[:2000]}).encode()
-    req = Request(
-        webhook_url,
-        data=payload,
-        headers={"Content-Type": "application/json", "User-Agent": "OpenClaw-DailyOps/1.0"},
-        method="POST",
-    )
-    try:
-        urlopen(req, timeout=10)
-        return True
-    except Exception as e:
-        code = getattr(e, "code", None)
-        if code == 204:
-            return True
-        print(f"[cost_report] Discord post failed: {e}", file=sys.stderr)
-        return False
 
 
 def post_telegram(bot_token, chat_id, message):
@@ -284,7 +262,7 @@ def main():
         print(report)
         return
 
-    # Post (Telegram first, Discord fallback)
+    # Post to Telegram
     telegram_bot_token = cfg.get("telegram_bot_token", "")
     telegram_chat_id = cfg.get("telegram_chat_id", "")
 
@@ -295,15 +273,7 @@ def main():
             print(f"[cost_report] Failed Telegram post — ${total_cost:.2f} today")
         return
 
-    webhook = cfg.get("discord_webhook", "")
-    if webhook and "YOUR_WEBHOOK" not in webhook:
-        if post_discord(webhook, report):
-            print(f"[cost_report] Report posted to Discord — ${total_cost:.2f} today")
-        else:
-            print(f"[cost_report] Failed Discord post — ${total_cost:.2f} today")
-        return
-
-    print("[cost_report] No Telegram/Discord destination configured — printing report instead:")
+    print("[cost_report] No Telegram destination configured — printing report instead:")
     print(report)
 
 

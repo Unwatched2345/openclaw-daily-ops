@@ -1,6 +1,6 @@
 ---
 name: openclaw-daily-ops
-description: Daily cost reporting + session hygiene for OpenClaw deployments. Tracks per-session API spend, shows 7-day trend, and wipes zombie sessions >24h old to prevent context snowball. Zero personal info — configure with your own paths and Discord channel. Runs nightly via cron.
+description: Daily cost reporting + session hygiene for OpenClaw deployments. Tracks per-session API spend, shows 7-day trend, and wipes zombie sessions >24h old to prevent context snowball. Telegram-only notifications. Runs nightly via cron.
 ---
 
 # OpenClaw Daily Ops
@@ -8,11 +8,11 @@ description: Daily cost reporting + session hygiene for OpenClaw deployments. Tr
 Two tasks in one nightly cron: **know what you spent, kill what's dead.**
 
 - Parses all OpenClaw session JSONL files → computes today's API cost per session
-- Posts a clean cost report to Discord with 7-day trend
+- Posts a clean cost report to Telegram with 7-day trend
 - Wipes sessions older than 24h with >1MB context (zombie killer)
 - Logs everything to `state/cost-log.json` and `state/session-reset-log.json`
 
-Zero AI credits spent — pure Python + one Discord message.
+Zero AI credits spent — pure Python + one Telegram message.
 
 ---
 
@@ -32,8 +32,9 @@ Edit `config.json`:
 {
   "sessions_dir": "~/.openclaw/agents/main/sessions",
   "workspace_dir": "~/.openclaw/workspace",
-  "discord_webhook": "https://discord.com/api/webhooks/YOUR/WEBHOOK",
-  "discord_user_id": "YOUR_DISCORD_USER_ID",
+  "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+  "telegram_chat_id": "-1001234567890",
+  "telegram_user_id": "1616735985",
   "channel_names": {
     "channel:YOUR_CHANNEL_ID": "#your-channel-name"
   },
@@ -45,13 +46,10 @@ Edit `config.json`:
 }
 ```
 
-**How to get a Discord webhook:**
-1. Go to your Discord channel → Edit Channel → Integrations → Webhooks → New Webhook
-2. Copy the webhook URL
-
-**How to get your Discord user ID:**
-1. Enable Developer Mode in Discord (Settings → Advanced → Developer Mode)
-2. Right-click your username → Copy User ID
+**How to get Telegram bot token + chat id:**
+1. Create bot in BotFather and copy token
+2. Add bot to your target chat/topic
+3. Use the chat ID/topic destination you already use in OpenClaw
 
 **Channel names** (optional): Map your OpenClaw channel session keys to human-readable names for the report. Find session keys in `~/.openclaw/agents/main/sessions/sessions.json`.
 
@@ -61,7 +59,7 @@ Edit `config.json`:
 python3 scripts/cost_report.py --config config.json --dry-run
 ```
 
-This prints the report without posting to Discord or writing logs.
+This prints the report without posting to Telegram or writing logs.
 
 ### 3. Set up the cron
 
@@ -82,31 +80,6 @@ Or run it as a system cron:
 
 ---
 
-## What the Report Looks Like
-
-```
-📊 Daily Cost Report — Mar 9, 2026
-
-💰 Total: $4.21 · 8.3M tokens
-
-By Session:
-🔴 #general — $2.45 · 4.1M tok
-🟡 #posting — $1.32 · 2.8M tok
-🟢 heartbeat — $0.44 · 1.4M tok
-
-7-day trend: $12 → $8 → $6 → $5 → $4 → $4 → $4
-
-✅ UNDER BUDGET
-🔄 Reset 2 stale sessions (3.2MB freed)
-```
-
-Color coding:
-- 🔴 session cost > $5
-- 🟡 session cost $1–$5  
-- 🟢 session cost < $1
-
----
-
 ## Skill Steps (for OpenClaw cron payload)
 
 When running as an OpenClaw cron agentTurn, the agent should:
@@ -118,7 +91,7 @@ Execute `scripts/cost_report.py --config /path/to/config.json` and capture outpu
 Execute `scripts/zombie_killer.py --config /path/to/config.json` and capture output.
 
 ### Step 3 — Format and post
-Combine both outputs into the report format above and post to your Discord webhook.
+Combine both outputs into the report format and post to Telegram.
 
 ---
 
@@ -128,8 +101,9 @@ Combine both outputs into the report format above and post to your Discord webho
 |-----|------|-------------|
 | `sessions_dir` | string | Path to OpenClaw sessions directory |
 | `workspace_dir` | string | Path to OpenClaw workspace (for state logs) |
-| `discord_webhook` | string | Discord webhook URL to post the report |
-| `discord_user_id` | string | Your Discord ID — tagged on urgent alerts |
+| `telegram_bot_token` | string | Telegram bot token to post the report |
+| `telegram_chat_id` | string | Telegram chat ID/topic destination |
+| `telegram_user_id` | string | Optional Telegram user ID shown in urgent alerts |
 | `channel_names` | object | Map session keys → display names (optional) |
 | `zombie_min_age_hours` | number | Sessions older than this get reset (default: 24) |
 | `zombie_min_size_mb` | number | Minimum file size to reset (default: 1MB) |
@@ -146,25 +120,9 @@ openclaw-daily-ops/
 ├── SKILL.md                 ← this file
 ├── config.example.json      ← template config (copy to config.json)
 ├── scripts/
-│   ├── cost_report.py       ← parses sessions, computes costs, posts to Discord
+│   ├── cost_report.py       ← parses sessions, computes costs, posts to Telegram
 │   └── zombie_killer.py     ← wipes stale sessions, logs what was cleared
 └── state/                   ← created automatically
     ├── cost-log.json        ← rolling 90-day cost history
     └── session-reset-log.json ← log of all zombie kills
 ```
-
----
-
-## FAQ
-
-**Q: Will this break my active sessions?**
-No. The zombie killer only resets sessions older than 24h AND larger than 1MB. Active sessions are never touched.
-
-**Q: What does "reset" mean?**
-It truncates the session JSONL file to empty. OpenClaw recreates it fresh on next use. All logs are saved to `session-reset-log.json` before wiping.
-
-**Q: Can I adjust the thresholds?**
-Yes — `zombie_min_age_hours` and `zombie_min_size_mb` in `config.json`.
-
-**Q: Does this work on Andre/multi-machine setups?**
-Yes. Run the setup on each machine with its own `config.json`. Both can post to the same Discord webhook.
